@@ -25,7 +25,7 @@ def tab_button(text: str, tab_name: str) -> rx.Component:
 def chart_of_accounts_view() -> rx.Component:
     return rx.el.div(
         rx.el.h2(
-            "Chart of Accounts",
+            AppState.t["chart_of_accounts"],
             class_name="text-xl font-semibold text-gray-700 mb-6 font-['JetBrains_Mono']",
         ),
         rx.el.div(
@@ -42,22 +42,35 @@ def index() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.el.h1(
-                            "Double-Entry Accounting",
+                            AppState.t["app_title"],
                             class_name="text-2xl font-bold text-gray-800 font-['JetBrains_Mono']",
                         ),
                         rx.el.p(
-                            "Offline-First Accounting App",
+                            AppState.t["app_subtitle"],
                             class_name="text-sm text-gray-500 font-['JetBrains_Mono']",
                         ),
                     ),
                     rx.el.div(
                         rx.el.div(
                             rx.icon("circle", class_name="w-3 h-3 text-green-500"),
-                            rx.el.p("Online", class_name="text-sm font-medium"),
+                            rx.el.p(
+                                AppState.t["online"], class_name="text-sm font-medium"
+                            ),
                             class_name="flex items-center gap-2 px-3 py-1 bg-green-100/50 rounded-full",
                         ),
-                        tab_button("Chart of Accounts", "accounts"),
-                        tab_button("Transactions", "transactions"),
+                        rx.el.select(
+                            rx.foreach(
+                                AppState.available_languages,
+                                lambda lang: rx.el.option(
+                                    f"{lang['flag']} {lang['name']}", value=lang["code"]
+                                ),
+                            ),
+                            value=AppState.language,
+                            on_change=AppState.set_language,
+                            class_name="px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 font-['JetBrains_Mono'] bg-white",
+                        ),
+                        tab_button(AppState.t["chart_of_accounts"], "accounts"),
+                        tab_button(AppState.t["transactions"], "transactions"),
                         rx.el.button(
                             rx.icon("settings", class_name="w-5 h-5"),
                             on_click=AppState.toggle_settings,
@@ -82,12 +95,12 @@ def index() -> rx.Component:
                 fab_button(
                     icon_name="user-plus",
                     on_click_event=AppState.toggle_account_form,
-                    tooltip_text="New Account",
+                    tooltip_text=AppState.t["new_account_title"],
                 ),
                 fab_button(
                     icon_name="file-plus-2",
                     on_click_event=AppState.toggle_transaction_form,
-                    tooltip_text="New Transaction",
+                    tooltip_text=AppState.t["new_transaction_title"],
                 ),
                 class_name="fixed bottom-6 right-6 flex flex-col gap-4 z-20",
             ),

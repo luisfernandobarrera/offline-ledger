@@ -41,19 +41,44 @@ Build a feature-complete double entry accounting app with offline support, multi
 
 ---
 
-## Phase 4: Reports & Financial Statements
-**Goal**: Generate standard accounting reports with filtering
+## Phase 4: Internationalization (i18n) - Multi-Language Support ✅
+**Goal**: Add translations for Spanish, French, Chinese, and Portuguese
 
-- [ ] Build Trial Balance report with date filtering
+- [x] Create translation data structure with language keys and text mappings
+- [x] Implement language state management (current language, available languages)
+- [x] Add language selector dropdown in header or settings modal
+- [x] Translate all UI text (page titles, button labels, form fields, validation messages)
+- [x] Translate account types (Asset, Liability, Equity, Revenue, Expense) in all languages
+- [x] Add date/number formatting for each locale (currency symbols, decimal separators)
+- [x] Implement dynamic text rendering based on selected language
+- [x] Store language preference in LocalStorage for persistence
+- [x] Add flags or language codes (EN, ES, FR, ZH, PT) for visual clarity
+- [x] Translate toast notifications and error messages
+
+**Supported Languages**:
+- English (EN) - default ✅
+- Spanish (ES) - Español ✅
+- French (FR) - Français ✅
+- Chinese (ZH) - 中文 ✅
+- Portuguese (PT) - Português ✅
+
+---
+
+## Phase 5: Reports & Financial Statements
+**Goal**: Generate standard accounting reports with filtering and multi-language support
+
+- [ ] Build Trial Balance report with date filtering and translations
 - [ ] Create Balance Sheet with proper categorization (Assets = Liabilities + Equity)
 - [ ] Implement Income Statement (Revenue - Expenses = Net Income)
 - [ ] Add General Ledger view showing all transactions by account
 - [ ] Create Journal Entry report showing chronological transactions
-- [ ] Add export to CSV/PDF functionality for reports
+- [ ] Add export to CSV/PDF functionality for reports with language-specific formatting
+- [ ] Implement report filtering (date range, account type, specific accounts)
+- [ ] Add print-friendly report layouts with company header
 
 ---
 
-## Phase 5: UI Polish & Material Design Implementation
+## Phase 6: UI Polish & Material Design Implementation
 **Goal**: Apply complete Material Design 3 system with emerald theme
 
 - [ ] Implement Material elevation system (0dp to 12dp) across all components
@@ -63,10 +88,12 @@ Build a feature-complete double entry accounting app with offline support, multi
 - [ ] Add FAB for quick transaction entry, positioned 16px from edges
 - [ ] Create responsive navigation (drawer on desktop, bottom nav on mobile)
 - [ ] Add loading states and transitions with Material motion curves
+- [ ] Implement dark mode toggle with proper theme switching
+- [ ] Add micro-interactions for form validation and success states
 
 ---
 
-## Phase 6: Data Validation & User Experience
+## Phase 7: Data Validation & User Experience
 **Goal**: Ensure data integrity and smooth user experience
 
 - [ ] Add comprehensive form validation with inline error messages
@@ -75,4 +102,6 @@ Build a feature-complete double entry accounting app with offline support, multi
 - [ ] Add confirmation dialogs for destructive actions (delete, edit)
 - [ ] Implement undo functionality for recent transactions
 - [ ] Add keyboard shortcuts for power users (Ctrl+N for new transaction, etc.)
-- [ ] Create dashboard with key metrics (total assets, liabilities, net worth)
+- [ ] Create dashboard with key metrics (total assets, liabilities, net worth, charts)
+- [ ] Add transaction search with autocomplete and fuzzy matching
+- [ ] Implement data integrity checks on import/sync

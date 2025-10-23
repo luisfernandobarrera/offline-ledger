@@ -81,6 +81,24 @@ class AppState(rx.State):
         "Revenue",
         "Expense",
     ]
+    language: str = rx.LocalStorage("en", name="language")
+    available_languages: list[dict[str, str]] = [
+        {"code": "en", "name": "English", "flag": "🇬🇧"},
+        {"code": "es", "name": "Español", "flag": "🇪🇸"},
+        {"code": "fr", "name": "Français", "flag": "🇫🇷"},
+        {"code": "zh", "name": "中文", "flag": "🇨🇳"},
+        {"code": "pt", "name": "Português", "flag": "🇵🇹"},
+    ]
+
+    @rx.var
+    def t(self) -> dict[str, str]:
+        from app.i18n import translations
+
+        return translations.get(self.language, translations["en"])
+
+    @rx.event
+    def set_language(self, lang_code: str):
+        self.language = lang_code
 
     @rx.event
     def toggle_settings(self):
@@ -88,14 +106,14 @@ class AppState(rx.State):
 
     @rx.var
     def account_name_error(self) -> str:
-        return "Name cannot be empty." if not self.new_account_name.strip() else ""
+        return self.t["error_name_empty"] if not self.new_account_name.strip() else ""
 
     @rx.var
     def account_code_error(self) -> str:
         if not self.new_account_code.strip():
-            return "Code cannot be empty."
+            return self.t["error_code_empty"]
         if any((acc["code"] == self.new_account_code for acc in self.accounts)):
-            return "Code already exists."
+            return self.t["error_code_exists"]
         return ""
 
     @rx.var
@@ -131,7 +149,7 @@ class AppState(rx.State):
             self.accounts_json = json.dumps(self.accounts)
             self.show_account_form = False
             self._reset_account_form()
-            return rx.toast("Account created successfully!", duration=3000)
+            return rx.toast(self.t["toast_account_created"], duration=3000)
 
     @rx.var
     def filtered_transactions(self) -> list[Transaction]:
@@ -340,7 +358,7 @@ class AppState(rx.State):
             self.accounts_json = json.dumps(self.accounts)
             self.show_transaction_form = False
             self._reset_transaction_form()
-            return rx.toast("Transaction created successfully!", duration=3000)
+            return rx.toast(self.t["toast_transaction_created"], duration=3000)
 
     @rx.event
     def load_from_storage(self):
@@ -367,7 +385,7 @@ class AppState(rx.State):
     @rx.event
     async def import_data(self, files: list[rx.UploadFile]):
         if not files:
-            return rx.toast("No file selected.", duration=3000)
+            return rx.toast(self.t["toast_no_file"], duration=3000)
         try:
             file_content = await files[0].read()
             data = json.loads(file_content)
@@ -378,11 +396,11 @@ class AppState(rx.State):
                 self.transactions_json = json.dumps(self.transactions)
                 self.accounts = sorted(self.accounts, key=lambda acc: acc["code"])
                 self.show_settings = False
-                return rx.toast("Data imported successfully!", duration=3000)
-            return rx.toast("Invalid backup file format.", duration=3000)
+                return rx.toast(self.t["toast_import_success"], duration=3000)
+            return rx.toast(self.t["toast_invalid_backup"], duration=3000)
         except Exception as e:
             logging.exception(f"Error importing data: {e}")
-            return rx.toast(f"Error importing data: {e}", duration=5000)
+            return rx.toast(f"{self.t['toast_import_error']}: {e}", duration=5000)
 
     @rx.event
     def clear_all_data(self):
@@ -391,4 +409,4 @@ class AppState(rx.State):
         self.accounts_json = "[]"
         self.transactions_json = "[]"
         self.show_settings = False
-        return rx.toast("All data has been cleared.", duration=3000)
+        return rx.toast(self.t["toast_data_cleared"], duration=3000)

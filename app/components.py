@@ -6,7 +6,7 @@ def transaction_list_view() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.h2(
-                "Transactions",
+                AppState.t["transactions_title"],
                 class_name="text-xl font-semibold text-gray-700 font-['JetBrains_Mono']",
             ),
             class_name="flex justify-between items-center mb-6",
@@ -14,9 +14,14 @@ def transaction_list_view() -> rx.Component:
         filter_panel(),
         rx.el.div(
             rx.el.div(
-                rx.el.p("Date", class_name="font-semibold col-span-2"),
-                rx.el.p("Description", class_name="font-semibold col-span-5"),
-                rx.el.p("Amount", class_name="font-semibold col-span-2 text-right"),
+                rx.el.p(AppState.t["date"], class_name="font-semibold col-span-2"),
+                rx.el.p(
+                    AppState.t["description"], class_name="font-semibold col-span-5"
+                ),
+                rx.el.p(
+                    AppState.t["amount"],
+                    class_name="font-semibold col-span-2 text-right",
+                ),
                 class_name="grid grid-cols-10 items-center p-2 text-sm text-gray-600 bg-gray-100 rounded-t-lg font-['JetBrains_Mono']",
             ),
             rx.foreach(AppState.filtered_transactions, transaction_list_item),
@@ -30,7 +35,7 @@ def filter_panel() -> rx.Component:
         rx.el.div(
             rx.el.div(
                 form_field(
-                    "Start Date",
+                    AppState.t["start_date"],
                     rx.el.input(
                         type="date",
                         default_value=AppState.filter_start_date,
@@ -39,7 +44,7 @@ def filter_panel() -> rx.Component:
                     ),
                 ),
                 form_field(
-                    "End Date",
+                    AppState.t["end_date"],
                     rx.el.input(
                         type="date",
                         default_value=AppState.filter_end_date,
@@ -51,27 +56,27 @@ def filter_panel() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.button(
-                    "Today",
+                    AppState.t["today"],
                     on_click=lambda: AppState.set_date_filter_preset("today"),
                     class_name="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200",
                 ),
                 rx.el.button(
-                    "This Week",
+                    AppState.t["this_week"],
                     on_click=lambda: AppState.set_date_filter_preset("this_week"),
                     class_name="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200",
                 ),
                 rx.el.button(
-                    "This Month",
+                    AppState.t["this_month"],
                     on_click=lambda: AppState.set_date_filter_preset("this_month"),
                     class_name="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200",
                 ),
                 rx.el.button(
-                    "This Year",
+                    AppState.t["this_year"],
                     on_click=lambda: AppState.set_date_filter_preset("this_year"),
                     class_name="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200",
                 ),
                 rx.el.button(
-                    "All Time",
+                    AppState.t["all_time"],
                     on_click=lambda: AppState.set_date_filter_preset("all"),
                     class_name="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200",
                 ),
@@ -80,18 +85,18 @@ def filter_panel() -> rx.Component:
             class_name="col-span-1 md:col-span-2",
         ),
         form_field(
-            "Description",
+            AppState.t["description"],
             rx.el.input(
-                placeholder="Search descriptions...",
+                placeholder=f"{AppState.t['search']}...",
                 default_value=AppState.filter_description,
                 on_change=AppState.set_filter_description.debounce(300),
                 class_name="w-full px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 font-['JetBrains_Mono']",
             ),
         ),
         form_field(
-            "Account",
+            AppState.t["account"],
             rx.el.select(
-                rx.el.option("All Accounts", value=""),
+                rx.el.option(AppState.t["all_accounts"], value=""),
                 rx.foreach(
                     AppState.accounts,
                     lambda acc: rx.el.option(
@@ -105,7 +110,7 @@ def filter_panel() -> rx.Component:
         ),
         rx.el.div(
             form_field(
-                "Min Amount",
+                AppState.t["min_amount"],
                 rx.el.input(
                     type="number",
                     placeholder="0.00",
@@ -115,7 +120,7 @@ def filter_panel() -> rx.Component:
                 ),
             ),
             form_field(
-                "Max Amount",
+                AppState.t["max_amount"],
                 rx.el.input(
                     type="number",
                     placeholder="1000.00",
@@ -127,7 +132,7 @@ def filter_panel() -> rx.Component:
             class_name="grid md:grid-cols-2 gap-4",
         ),
         rx.el.button(
-            "Reset Filters",
+            AppState.t["reset_filters"],
             on_click=AppState.reset_filters,
             class_name="w-full mt-4 px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 font-['JetBrains_Mono']",
         ),
@@ -171,15 +176,15 @@ def transaction_detail_view(transaction: rx.Var[dict]) -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.p(
-                "Account",
+                AppState.t["account"],
                 class_name="font-semibold text-xs uppercase col-span-5 text-gray-500",
             ),
             rx.el.p(
-                "Debit",
+                AppState.t["debit"],
                 class_name="font-semibold text-xs uppercase col-span-2 text-right text-gray-500",
             ),
             rx.el.p(
-                "Credit",
+                AppState.t["credit"],
                 class_name="font-semibold text-xs uppercase col-span-2 text-right text-gray-500",
             ),
             class_name="grid grid-cols-9 items-center px-4 pt-2",
@@ -238,7 +243,7 @@ def account_form() -> rx.Component:
         rx.el.div(
             rx.el.div(
                 rx.el.h2(
-                    "New Account",
+                    AppState.t["new_account_title"],
                     class_name="text-lg font-bold text-gray-800 font-['JetBrains_Mono']",
                 ),
                 rx.el.button(
@@ -249,9 +254,9 @@ def account_form() -> rx.Component:
                 class_name="flex justify-between items-center mb-6 pb-4 border-b",
             ),
             form_field(
-                "Account Name",
+                AppState.t["account_name"],
                 rx.el.input(
-                    placeholder="e.g. Office Supplies",
+                    placeholder=AppState.t["account_name_placeholder"],
                     default_value=AppState.new_account_name,
                     on_change=AppState.set_new_account_name,
                     class_name="w-full px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 font-['JetBrains_Mono']",
@@ -259,9 +264,9 @@ def account_form() -> rx.Component:
                 AppState.account_name_error,
             ),
             form_field(
-                "Account Code",
+                AppState.t["account_code"],
                 rx.el.input(
-                    placeholder="e.g. 1510",
+                    placeholder=AppState.t["account_code_placeholder"],
                     default_value=AppState.new_account_code,
                     on_change=AppState.set_new_account_code,
                     class_name="w-full px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 font-['JetBrains_Mono']",
@@ -269,11 +274,11 @@ def account_form() -> rx.Component:
                 AppState.account_code_error,
             ),
             form_field(
-                "Account Type",
+                AppState.t["account_type"],
                 rx.el.select(
                     rx.foreach(
                         AppState.account_types,
-                        lambda type: rx.el.option(type, value=type),
+                        lambda type: rx.el.option(AppState.t[type.lower()], value=type),
                     ),
                     value=AppState.new_account_type,
                     on_change=AppState.set_new_account_type,
@@ -282,12 +287,12 @@ def account_form() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.button(
-                    "Cancel",
+                    AppState.t["cancel"],
                     on_click=AppState.toggle_account_form,
                     class_name="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 font-['JetBrains_Mono']",
                 ),
                 rx.el.button(
-                    "Create Account",
+                    AppState.t["create_account"],
                     on_click=AppState.create_account,
                     disabled=~AppState.is_account_form_valid,
                     class_name="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed font-['JetBrains_Mono']",
@@ -306,7 +311,7 @@ def transaction_form() -> rx.Component:
             rx.el.div(
                 rx.el.div(
                     rx.el.h2(
-                        "New Transaction",
+                        AppState.t["new_transaction_title"],
                         class_name="text-lg font-bold text-gray-800 font-['JetBrains_Mono']",
                     ),
                     rx.el.button(
@@ -318,7 +323,7 @@ def transaction_form() -> rx.Component:
                 ),
                 rx.el.div(
                     form_field(
-                        "Date",
+                        AppState.t["date"],
                         rx.el.input(
                             type="date",
                             default_value=AppState.new_transaction_date,
@@ -327,9 +332,9 @@ def transaction_form() -> rx.Component:
                         ),
                     ),
                     form_field(
-                        "Description",
+                        AppState.t["description"],
                         rx.el.input(
-                            placeholder="e.g. Purchase of office supplies",
+                            placeholder=AppState.t["description_placeholder"],
                             default_value=AppState.new_transaction_description,
                             on_change=AppState.set_new_transaction_description,
                             class_name="w-full px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 font-['JetBrains_Mono']",
@@ -339,15 +344,15 @@ def transaction_form() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.p(
-                        "Account",
+                        AppState.t["account"],
                         class_name="text-xs font-bold text-gray-500 uppercase col-span-4",
                     ),
                     rx.el.p(
-                        "Debit",
+                        AppState.t["debit"],
                         class_name="text-xs font-bold text-gray-500 uppercase text-right col-span-2",
                     ),
                     rx.el.p(
-                        "Credit",
+                        AppState.t["credit"],
                         class_name="text-xs font-bold text-gray-500 uppercase text-right col-span-2",
                     ),
                     rx.el.div(),
@@ -357,7 +362,9 @@ def transaction_form() -> rx.Component:
                     AppState.new_transaction_entries,
                     lambda entry, index: rx.el.div(
                         rx.el.select(
-                            rx.el.option("Select Account", value="", disabled=True),
+                            rx.el.option(
+                                AppState.t["select_account"], value="", disabled=True
+                            ),
                             rx.foreach(
                                 AppState.accounts,
                                 lambda acc: rx.el.option(
@@ -398,13 +405,13 @@ def transaction_form() -> rx.Component:
                 ),
                 rx.el.button(
                     rx.icon("plus", class_name="w-4 h-4 mr-2"),
-                    "Add Row",
+                    AppState.t["add_row"],
                     on_click=AppState.add_entry_row,
                     class_name="mt-2 px-3 py-1 text-sm text-emerald-600 font-medium flex items-center hover:bg-emerald-50 rounded-md font-['JetBrains_Mono']",
                 ),
                 rx.el.div(
                     rx.el.div(
-                        rx.el.p("Debits:", class_name="font-semibold"),
+                        rx.el.p(f"{AppState.t['debits']}:", class_name="font-semibold"),
                         rx.el.p(
                             f"${AppState.total_debits.to_string()}",
                             class_name="font-mono",
@@ -412,7 +419,9 @@ def transaction_form() -> rx.Component:
                         class_name="flex justify-between",
                     ),
                     rx.el.div(
-                        rx.el.p("Credits:", class_name="font-semibold"),
+                        rx.el.p(
+                            f"{AppState.t['credits']}:", class_name="font-semibold"
+                        ),
                         rx.el.p(
                             f"${AppState.total_credits.to_string()}",
                             class_name="font-mono",
@@ -420,7 +429,9 @@ def transaction_form() -> rx.Component:
                         class_name="flex justify-between",
                     ),
                     rx.el.div(
-                        rx.el.p("Balance:", class_name="font-semibold"),
+                        rx.el.p(
+                            f"{AppState.t['balance']}:", class_name="font-semibold"
+                        ),
                         rx.el.p(
                             f"${AppState.transaction_balance.to_string()}",
                             class_name=rx.cond(
@@ -435,12 +446,12 @@ def transaction_form() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.button(
-                        "Cancel",
+                        AppState.t["cancel"],
                         on_click=AppState.toggle_transaction_form,
                         class_name="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 font-['JetBrains_Mono']",
                     ),
                     rx.el.button(
-                        "Create Transaction",
+                        AppState.t["create_transaction"],
                         on_click=AppState.create_transaction,
                         disabled=~AppState.is_transaction_form_valid,
                         class_name="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed font-['JetBrains_Mono']",
@@ -463,7 +474,7 @@ def account_card(account: rx.Var[dict]) -> rx.Component:
                 class_name="text-sm font-bold text-gray-800 font-['JetBrains_Mono']",
             ),
             rx.el.span(
-                account["type"],
+                AppState.t[account["type"].to(str).lower()],
                 class_name="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 font-['JetBrains_Mono']",
             ),
             class_name="flex justify-between items-center mb-2",
@@ -474,7 +485,8 @@ def account_card(account: rx.Var[dict]) -> rx.Component:
         ),
         rx.el.div(
             rx.el.p(
-                "Balance", class_name="text-sm text-gray-500 font-['JetBrains_Mono']"
+                AppState.t["balance"],
+                class_name="text-sm text-gray-500 font-['JetBrains_Mono']",
             ),
             rx.el.p(
                 f"${account['balance'].to_string()}",

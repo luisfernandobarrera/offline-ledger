@@ -8,7 +8,7 @@ def settings_modal() -> rx.Component:
         rx.el.div(
             rx.el.div(
                 rx.el.h2(
-                    "Settings",
+                    AppState.t["settings_title"],
                     class_name="text-lg font-bold text-gray-800 font-['JetBrains_Mono']",
                 ),
                 rx.el.button(
@@ -20,19 +20,22 @@ def settings_modal() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.h3(
-                    "Data Management", class_name="font-semibold text-gray-700 mb-2"
+                    AppState.t["data_management"],
+                    class_name="font-semibold text-gray-700 mb-2",
                 ),
                 rx.el.div(
                     rx.el.div(
-                        rx.el.p("Export Data", class_name="font-medium"),
                         rx.el.p(
-                            "Download all accounts and transactions as a JSON file.",
+                            AppState.t["export_data_title"], class_name="font-medium"
+                        ),
+                        rx.el.p(
+                            AppState.t["export_data_desc"],
                             class_name="text-sm text-gray-500",
                         ),
                         class_name="flex-grow",
                     ),
                     rx.el.button(
-                        "Export",
+                        AppState.t["export"],
                         on_click=AppState.export_data,
                         class_name="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md shadow-sm hover:bg-emerald-700",
                     ),
@@ -40,16 +43,18 @@ def settings_modal() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.div(
-                        rx.el.p("Import Data", class_name="font-medium"),
                         rx.el.p(
-                            "Upload a JSON backup file to restore your data.",
+                            AppState.t["import_data_title"], class_name="font-medium"
+                        ),
+                        rx.el.p(
+                            AppState.t["import_data_desc"],
                             class_name="text-sm text-gray-500",
                         ),
                         class_name="flex-grow",
                     ),
                     rx.upload.root(
                         rx.el.button(
-                            "Import",
+                            AppState.t["import"],
                             class_name="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md shadow-sm hover:bg-emerald-700",
                         ),
                         id="import-upload",
@@ -61,10 +66,11 @@ def settings_modal() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.el.p(
-                            "Clear All Data", class_name="font-medium text-red-600"
+                            AppState.t["clear_data_title"],
+                            class_name="font-medium text-red-600",
                         ),
                         rx.el.p(
-                            "Permanently delete all accounts and transactions.",
+                            AppState.t["clear_data_desc"],
                             class_name="text-sm text-gray-500",
                         ),
                         class_name="flex-grow",
@@ -72,7 +78,7 @@ def settings_modal() -> rx.Component:
                     rx.radix.primitives.dialog.root(
                         rx.radix.primitives.dialog.trigger(
                             rx.el.button(
-                                "Clear Data",
+                                AppState.t["clear_data"],
                                 class_name="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md shadow-sm hover:bg-red-700",
                             )
                         ),
@@ -82,23 +88,23 @@ def settings_modal() -> rx.Component:
                             ),
                             rx.radix.primitives.dialog.content(
                                 rx.radix.primitives.dialog.title(
-                                    "Confirm Deletion",
+                                    AppState.t["confirm_deletion_title"],
                                     class_name="text-lg font-semibold text-gray-800",
                                 ),
                                 rx.radix.primitives.dialog.description(
-                                    "Are you sure you want to permanently delete all data? This action cannot be undone.",
+                                    AppState.t["confirm_deletion_desc"],
                                     class_name="text-sm text-gray-600 mt-2",
                                 ),
                                 rx.el.div(
                                     rx.radix.primitives.dialog.close(
                                         rx.el.button(
-                                            "Cancel",
+                                            AppState.t["cancel"],
                                             class_name="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md shadow-sm hover:bg-gray-200",
                                         )
                                     ),
                                     rx.radix.primitives.dialog.close(
                                         rx.el.button(
-                                            "Clear Data",
+                                            AppState.t["clear_data"],
                                             on_click=AppState.clear_all_data,
                                             class_name="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700",
                                         )

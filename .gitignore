@@ -1,4 +1,44 @@
+assets/external/
+.web
+.states
+*.db
 .web/
 .states/
 __pycache__/
 /app/__pycache__/
+
+# uv
+.venv/
+uv.lock
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

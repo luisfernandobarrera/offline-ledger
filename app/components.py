@@ -24,8 +24,32 @@ def transaction_list_view() -> rx.Component:
                 ),
                 class_name="grid grid-cols-10 items-center p-2 text-sm text-gray-600 bg-gray-100 rounded-t-lg font-['JetBrains_Mono']",
             ),
-            rx.foreach(AppState.filtered_transactions, transaction_list_item),
-            class_name="bg-white rounded-lg shadow-md border border-gray-200 mt-6",
+            rx.el.div(
+                rx.el.span(
+                    AppState.filtered_count_badge,
+                    class_name="text-xs text-gray-500 px-2",
+                ),
+                class_name="mt-1",
+            ),
+            rx.cond(
+                AppState.filtered_transaction_count == 0,
+                rx.el.div(
+                    rx.el.p(
+                        "No transactions match your filters.",
+                        class_name="text-sm text-gray-600",
+                    ),
+                    rx.el.button(
+                        "Reset filters",
+                        on_click=AppState.reset_filters,
+                        class_name="mt-2 px-3 py-1 text-sm text-white bg-gray-600 rounded-md",
+                    ),
+                    class_name="bg-white rounded-lg shadow-md border border-gray-200 mt-6 p-6 text-center",
+                ),
+                rx.el.div(
+                    rx.foreach(AppState.filtered_transactions_rows, transaction_list_item),
+                    class_name="bg-white rounded-lg shadow-md border border-gray-200 mt-6",
+                ),
+            ),
         ),
     )
 
@@ -141,14 +165,14 @@ def filter_panel() -> rx.Component:
 
 
 def transaction_list_item(transaction: rx.Var[dict]) -> rx.Component:
-    total_amount = rx.call_script(
-        f"({transaction['entries']}.reduce((sum, entry) => sum + parseFloat(entry.debit || 0), 0)).toFixed(2)"
-    )
     return rx.el.div(
         rx.el.div(
             rx.el.p(transaction["date"], class_name="col-span-2"),
             rx.el.p(transaction["description"], class_name="col-span-5 truncate"),
-            rx.el.p(f"${total_amount}", class_name="col-span-2 text-right"),
+            rx.el.p(
+            f"${transaction['total'].to_string()}",
+                class_name="col-span-2 text-right",
+            ),
             rx.el.button(
                 rx.icon(
                     rx.cond(
@@ -190,7 +214,7 @@ def transaction_detail_view(transaction: rx.Var[dict]) -> rx.Component:
             class_name="grid grid-cols-9 items-center px-4 pt-2",
         ),
         rx.foreach(
-            transaction["entries"],
+            AppState.entries_for_expanded,
             lambda entry: rx.el.div(
                 rx.el.div(
                     rx.el.p(
@@ -203,11 +227,11 @@ def transaction_detail_view(transaction: rx.Var[dict]) -> rx.Component:
                     class_name="col-span-5",
                 ),
                 rx.el.p(
-                    rx.cond(entry["debit"] > 0, f"{entry['debit'].to_string()}", "-"),
+                    f"{entry['debit'].to_string()}",
                     class_name="col-span-2 text-right font-mono",
                 ),
                 rx.el.p(
-                    rx.cond(entry["credit"] > 0, f"{entry['credit'].to_string()}", "-"),
+                    f"{entry['credit'].to_string()}",
                     class_name="col-span-2 text-right font-mono",
                 ),
                 class_name="grid grid-cols-9 items-center p-4 border-b border-gray-100",
@@ -294,7 +318,7 @@ def account_form() -> rx.Component:
                 rx.el.button(
                     AppState.t["create_account"],
                     on_click=AppState.create_account,
-                    disabled=~AppState.is_account_form_valid,
+                    disabled=rx.cond(AppState.is_account_form_valid, False, True),
                     class_name="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed font-['JetBrains_Mono']",
                 ),
                 class_name="flex justify-end gap-4 mt-8",
@@ -374,6 +398,7 @@ def transaction_form() -> rx.Component:
                             on_change=lambda val: AppState.update_entry(
                                 index, "account_id", val
                             ),
+                            value=entry["account_id"].to(str),
                             class_name="w-full px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 font-['JetBrains_Mono'] bg-white col-span-4",
                         ),
                         rx.el.input(
@@ -453,7 +478,7 @@ def transaction_form() -> rx.Component:
                     rx.el.button(
                         AppState.t["create_transaction"],
                         on_click=AppState.create_transaction,
-                        disabled=~AppState.is_transaction_form_valid,
+                    disabled=rx.cond(AppState.is_transaction_form_valid, False, True),
                         class_name="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed font-['JetBrains_Mono']",
                     ),
                     class_name="flex justify-end gap-4 mt-8",

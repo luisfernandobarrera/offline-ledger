@@ -33,7 +33,7 @@ class Transaction(TypedDict):
 class AppState(rx.State):
     """The main state for the accounting app."""
 
-    active_tab: Literal["accounts", "transactions"] = "accounts"
+    active_tab: Literal["accounts", "transactions", "reports", "dashboard"] = "accounts"
     accounts_json: str = rx.LocalStorage(
         '[{"id": "'
         + str(uuid.uuid4())
@@ -89,6 +89,19 @@ class AppState(rx.State):
         {"code": "zh", "name": "中文", "flag": "🇨🇳"},
         {"code": "pt", "name": "Português", "flag": "🇵🇹"},
     ]
+    # Report-related state
+    active_report_tab: Literal["trial_balance", "balance_sheet", "income_statement", "general_ledger"] = "trial_balance"
+    report_date: str = datetime.date.today().isoformat()
+    report_start_date: str = datetime.date.today().replace(day=1).isoformat()
+    report_end_date: str = datetime.date.today().isoformat()
+    general_ledger_account_id: str = ""
+    # UI state
+    # Persisted as string to avoid type-mismatch with LocalStorage
+    dark_mode_str: str = rx.LocalStorage("false", name="dark_mode")
+
+    @rx.var
+    def is_dark_mode(self) -> bool:
+        return str(self.dark_mode_str).lower() == "true"
 
     @rx.var
     def t(self) -> dict[str, str]:
@@ -103,6 +116,90 @@ class AppState(rx.State):
     @rx.event
     def toggle_settings(self):
         self.show_settings = not self.show_settings
+    
+    @rx.event
+    def toggle_dark_mode(self):
+        # Flip the stored string value
+        current = str(self.dark_mode_str).lower() == "true"
+        self.dark_mode_str = "true" if not current else "false"
+    
+    # Explicit setters for filter fields (to avoid deprecation warnings)
+    @rx.event
+    def set_filter_start_date(self, value: str):
+        self.filter_start_date = value
+    
+    @rx.event
+    def set_filter_end_date(self, value: str):
+        self.filter_end_date = value
+    
+    @rx.event
+    def set_filter_description(self, value: str):
+        self.filter_description = value
+    
+    @rx.event
+    def set_filter_account_id(self, value: str):
+        self.filter_account_id = value
+    
+    @rx.event
+    def set_filter_min_amount(self, value: float):
+        # Store as string for consistent filtering and UI binding
+        try:
+            if value is None:
+                self.filter_min_amount = ""
+            else:
+                # Allow both float and str inputs
+                numeric = float(value)
+                # Treat 0.0 same as unset to preserve semantics
+                self.filter_min_amount = "" if numeric == 0.0 else str(numeric)
+        except (ValueError, TypeError):
+            self.filter_min_amount = ""
+    
+    @rx.event
+    def set_filter_max_amount(self, value: float):
+        # Store as string for consistent filtering and UI binding
+        try:
+            if value is None:
+                self.filter_max_amount = ""
+            else:
+                numeric = float(value)
+                self.filter_max_amount = "" if numeric == 0.0 else str(numeric)
+        except (ValueError, TypeError):
+            self.filter_max_amount = ""
+    
+    # Explicit setters for report fields
+    @rx.event
+    def set_report_date(self, value: str):
+        self.report_date = value
+    
+    @rx.event
+    def set_report_start_date(self, value: str):
+        self.report_start_date = value
+    
+    @rx.event
+    def set_report_end_date(self, value: str):
+        self.report_end_date = value
+    
+    # Explicit setters for account form fields
+    @rx.event
+    def set_new_account_name(self, value: str):
+        self.new_account_name = value
+    
+    @rx.event
+    def set_new_account_code(self, value: str):
+        self.new_account_code = value
+    
+    @rx.event
+    def set_new_account_type(self, value: AccountType):
+        self.new_account_type = value
+    
+    # Explicit setters for transaction form fields
+    @rx.event
+    def set_new_transaction_date(self, value: str):
+        self.new_transaction_date = value
+    
+    @rx.event
+    def set_new_transaction_description(self, value: str):
+        self.new_transaction_description = value
 
     @rx.var
     def account_name_error(self) -> str:
@@ -131,8 +228,16 @@ class AppState(rx.State):
         self.new_account_type = "Asset"
 
     @rx.event
-    def set_active_tab(self, tab_name: Literal["accounts", "transactions"]):
+    def set_active_tab(self, tab_name: Literal["accounts", "transactions", "reports", "dashboard"]):
         self.active_tab = tab_name
+    
+    @rx.event
+    def set_active_report_tab(self, tab_name: Literal["trial_balance", "balance_sheet", "income_statement", "general_ledger"]):
+        self.active_report_tab = tab_name
+    
+    @rx.event
+    def set_general_ledger_account_id(self, account_id: str):
+        self.general_ledger_account_id = account_id
 
     @rx.event
     def create_account(self):
@@ -189,6 +294,32 @@ class AppState(rx.State):
             ]
         return sorted(transactions_to_filter, key=lambda t: t["date"], reverse=True)
 
+    @rx.var
+    def filtered_transaction_count(self) -> int:
+        return len(self.filtered_transactions)
+
+    @rx.var
+    def total_transaction_count(self) -> int:
+        return len(self.transactions)
+
+    @rx.var
+    def filtered_count_badge(self) -> str:
+        return f"{self.filtered_transaction_count}/{self.total_transaction_count}"
+
+    @rx.var
+    def filtered_transactions_rows(self) -> list[dict]:
+        rows: list[dict] = []
+        for t in self.filtered_transactions:
+            total = sum(float(e.get("debit", 0.0) or 0.0) for e in t.get("entries", []))
+            rows.append({
+                "id": t["id"],
+                "date": t["date"],
+                "description": t["description"],
+                "entries": t["entries"],
+                "total": round(total, 2),
+            })
+        return rows
+
     @rx.event
     def set_date_filter_preset(self, preset: str):
         today = datetime.date.today()
@@ -226,6 +357,31 @@ class AppState(rx.State):
             self.expanded_transaction_id = ""
         else:
             self.expanded_transaction_id = transaction_id
+
+    @rx.var
+    def entries_for_expanded(self) -> list[Entry]:
+        if not self.expanded_transaction_id:
+            return []
+        txn = next((t for t in self.transactions if t["id"] == self.expanded_transaction_id), None)
+        if not txn:
+            return []
+        # Ensure types are normalized
+        fixed: list[Entry] = []
+        for e in txn.get("entries", []):
+            try:
+                debit = float(e.get("debit", 0.0) or 0.0)
+            except Exception:
+                debit = 0.0
+            try:
+                credit = float(e.get("credit", 0.0) or 0.0)
+            except Exception:
+                credit = 0.0
+            fixed.append({
+                "account_id": str(e.get("account_id", "")),
+                "debit": debit,
+                "credit": credit,
+            })
+        return fixed
 
     @rx.var
     def get_account_map(self) -> dict[str, Account]:
@@ -373,6 +529,9 @@ class AppState(rx.State):
             logging.exception(f"Error decoding transactions_json: {e}")
             self.transactions = []
         self.accounts = sorted(self.accounts, key=lambda acc: acc["code"])
+        # Default preset to All Time on first load if there are transactions and no date filter
+        if self.transactions and not (self.filter_start_date or self.filter_end_date):
+            self.set_date_filter_preset("all")
 
     @rx.event
     def export_data(self) -> rx.event.EventSpec:
@@ -410,3 +569,346 @@ class AppState(rx.State):
         self.transactions_json = "[]"
         self.show_settings = False
         return rx.toast(self.t["toast_data_cleared"], duration=3000)
+    
+    @rx.event
+    def normalize_data(self):
+        """Coerce legacy transaction shapes to the expected schema and persist."""
+        try:
+            # Ensure in-memory data is up to date with storage
+            try:
+                self.accounts = json.loads(self.accounts_json)
+            except Exception:
+                pass
+            try:
+                self.transactions = json.loads(self.transactions_json)
+            except Exception:
+                pass
+
+            normalized: list[Transaction] = []
+            for txn in self.transactions or []:
+                # Basic fields
+                txn_id = str(txn.get("id") or uuid.uuid4())
+                # Coerce date to ISO yyyy-mm-dd if possible
+                raw_date = txn.get("date") or txn.get("created_at") or datetime.date.today().isoformat()
+                try:
+                    # Accept already-ISO or parseable dates
+                    date_iso = str(raw_date)
+                    if len(date_iso) >= 10 and date_iso[4] == '-' and date_iso[7] == '-':
+                        pass
+                    else:
+                        date_iso = datetime.date.fromisoformat(str(raw_date)).isoformat()
+                except Exception:
+                    date_iso = datetime.date.today().isoformat()
+                description = str(txn.get("description") or txn.get("memo") or "")
+
+                entries = txn.get("entries") or txn.get("lines") or []
+                fixed_entries: list[Entry] = []
+                for e in entries:
+                    account_id = str(e.get("account_id") or e.get("account") or "")
+                    # Coerce debit/credit to non-negative floats
+                    def to_amount(x: Any) -> float:
+                        try:
+                            if x in (None, ""):
+                                return 0.0
+                            return float(x)
+                        except Exception:
+                            return 0.0
+
+                    debit = abs(to_amount(e.get("debit")))
+                    credit = abs(to_amount(e.get("credit")))
+                    # If both present, keep the larger and zero the other
+                    if debit > 0 and credit > 0:
+                        if debit >= credit:
+                            credit = 0.0
+                        else:
+                            debit = 0.0
+                    fixed_entries.append({
+                        "account_id": account_id,
+                        "debit": debit,
+                        "credit": credit,
+                    })
+
+                normalized.append({
+                    "id": txn_id,
+                    "date": date_iso,
+                    "description": description,
+                    "entries": fixed_entries,
+                })
+
+            self.transactions = normalized
+            self.transactions_json = json.dumps(self.transactions)
+            # Keep accounts list persisted and sorted
+            try:
+                self.accounts = sorted(self.accounts, key=lambda acc: acc["code"]) if self.accounts else []
+                self.accounts_json = json.dumps(self.accounts)
+            except Exception:
+                pass
+            return rx.toast("Data normalized.", duration=3000)
+        except Exception as e:
+            logging.exception(f"Error normalizing data: {e}")
+            return rx.toast(f"Normalize failed: {e}", duration=5000)
+    
+    @rx.event
+    def recompute_balances_from_transactions(self):
+        """Re-derive all account balances strictly from transactions."""
+        try:
+            # Ensure in-memory mirrors persisted data
+            try:
+                self.accounts = json.loads(self.accounts_json)
+            except Exception:
+                pass
+            try:
+                self.transactions = json.loads(self.transactions_json)
+            except Exception:
+                pass
+
+            # Initialize per-account balances
+            account_type_by_id: dict[str, str] = {acc["id"]: acc["type"] for acc in self.accounts}
+            new_balance_by_id: dict[str, float] = {acc_id: 0.0 for acc_id in account_type_by_id.keys()}
+
+            # Accumulate from every transaction entry
+            for txn in self.transactions or []:
+                for e in txn.get("entries", []):
+                    acc_id = str(e.get("account_id") or "")
+                    if not acc_id or acc_id not in new_balance_by_id:
+                        # Skip entries that reference unknown accounts
+                        continue
+                    try:
+                        debit = float(e.get("debit", 0.0) or 0.0)
+                    except Exception:
+                        debit = 0.0
+                    try:
+                        credit = float(e.get("credit", 0.0) or 0.0)
+                    except Exception:
+                        credit = 0.0
+                    acc_type = account_type_by_id.get(acc_id, "Asset")
+                    if acc_type in ["Asset", "Expense"]:
+                        delta = debit - credit
+                    else:
+                        delta = credit - debit
+                    new_balance_by_id[acc_id] += delta
+
+            # Write back rounded balances
+            updated_accounts: list[Account] = []
+            for acc in self.accounts:
+                updated = dict(acc)
+                updated["balance"] = round(new_balance_by_id.get(acc["id"], 0.0), 2)
+                updated_accounts.append(updated)
+            self.accounts = updated_accounts
+            self.accounts_json = json.dumps(self.accounts)
+            return rx.toast("Balances recomputed from transactions.", duration=3000)
+        except Exception as e:
+            logging.exception(f"Error recomputing balances: {e}")
+            return rx.toast(f"Recompute failed: {e}", duration=5000)
+        
+    # Report computed properties
+    @rx.var
+    def trial_balance_data(self) -> list[dict]:
+        """Returns trial balance data with debit/credit columns."""
+        result = []
+        for acc in self.accounts:
+            balance = acc["balance"]
+            debit = balance if balance > 0 else 0.0
+            credit = abs(balance) if balance < 0 else 0.0
+            result.append({
+                "code": acc["code"],
+                "name": acc["name"],
+                "type": acc["type"],
+                "debit": debit,
+                "credit": credit,
+            })
+        return result
+    
+    @rx.var
+    def trial_balance_total_debits(self) -> float:
+        return sum(item["debit"] for item in self.trial_balance_data)
+    
+    @rx.var
+    def trial_balance_total_credits(self) -> float:
+        return sum(item["credit"] for item in self.trial_balance_data)
+    
+    @rx.var
+    def balance_sheet_assets(self) -> list[Account]:
+        return [acc for acc in self.accounts if acc["type"] == "Asset"]
+    
+    @rx.var
+    def balance_sheet_liabilities(self) -> list[Account]:
+        return [acc for acc in self.accounts if acc["type"] == "Liability"]
+    
+    @rx.var
+    def balance_sheet_equity(self) -> list[Account]:
+        return [acc for acc in self.accounts if acc["type"] == "Equity"]
+    
+    @rx.var
+    def total_assets(self) -> float:
+        return sum(acc["balance"] for acc in self.balance_sheet_assets)
+    
+    @rx.var
+    def total_liabilities(self) -> float:
+        return abs(sum(acc["balance"] for acc in self.balance_sheet_liabilities))
+    
+    @rx.var
+    def total_equity(self) -> float:
+        return abs(sum(acc["balance"] for acc in self.balance_sheet_equity))
+    
+    @rx.var
+    def total_liabilities_equity(self) -> float:
+        return self.total_liabilities + self.total_equity
+    
+    @rx.var
+    def income_statement_revenue(self) -> list[Account]:
+        return [acc for acc in self.accounts if acc["type"] == "Revenue"]
+    
+    @rx.var
+    def income_statement_expenses(self) -> list[Account]:
+        return [acc for acc in self.accounts if acc["type"] == "Expense"]
+    
+    @rx.var
+    def total_revenue(self) -> float:
+        return abs(sum(acc["balance"] for acc in self.income_statement_revenue))
+    
+    @rx.var
+    def total_expenses(self) -> float:
+        return sum(acc["balance"] for acc in self.income_statement_expenses)
+    
+    @rx.var
+    def net_income(self) -> float:
+        return self.total_revenue - self.total_expenses
+    
+    @rx.var
+    def general_ledger_entries(self) -> list[dict]:
+        """Returns entries for the selected account with running balance."""
+        if not self.general_ledger_account_id:
+            return []
+        
+        entries = []
+        running_balance = 0.0
+        
+        # Get account type to determine balance calculation
+        account = next((acc for acc in self.accounts if acc["id"] == self.general_ledger_account_id), None)
+        if not account:
+            return []
+        
+        account_type = account["type"]
+        
+        # Collect all entries for this account
+        for txn in sorted(self.transactions, key=lambda t: t["date"]):
+            for entry in txn["entries"]:
+                if entry["account_id"] == self.general_ledger_account_id:
+                    # Calculate running balance based on account type
+                    if account_type in ["Asset", "Expense"]:
+                        running_balance += entry["debit"] - entry["credit"]
+                    else:
+                        running_balance += entry["credit"] - entry["debit"]
+                    
+                    entries.append({
+                        "date": txn["date"],
+                        "description": txn["description"],
+                        "debit": entry["debit"],
+                        "credit": entry["credit"],
+                        "running_balance": running_balance,
+                    })
+        
+        return entries
+    
+    @rx.event
+    def export_report_csv(self) -> rx.event.EventSpec:
+        """Export current report as CSV."""
+        import csv
+        import io
+        
+        output = io.StringIO()
+        
+        if self.active_report_tab == "trial_balance":
+            writer = csv.writer(output)
+            writer.writerow(["Code", "Account Name", "Debit", "Credit"])
+            for item in self.trial_balance_data:
+                writer.writerow([
+                    item["code"],
+                    item["name"],
+                    f"{item['debit']:.2f}" if item["debit"] > 0 else "",
+                    f"{item['credit']:.2f}" if item["credit"] > 0 else "",
+                ])
+            writer.writerow(["", "Total", f"{self.trial_balance_total_debits:.2f}", f"{self.trial_balance_total_credits:.2f}"])
+            filename = f"trial_balance_{self.report_date}.csv"
+        
+        elif self.active_report_tab == "balance_sheet":
+            writer = csv.writer(output)
+            writer.writerow(["Balance Sheet", f"As of {self.report_date}"])
+            writer.writerow([])
+            writer.writerow(["ASSETS"])
+            for acc in self.balance_sheet_assets:
+                writer.writerow([f"{acc['code']} - {acc['name']}", f"{acc['balance']:.2f}"])
+            writer.writerow(["Total Assets", f"{self.total_assets:.2f}"])
+            writer.writerow([])
+            writer.writerow(["LIABILITIES"])
+            for acc in self.balance_sheet_liabilities:
+                writer.writerow([f"{acc['code']} - {acc['name']}", f"{abs(acc['balance']):.2f}"])
+            writer.writerow(["Total Liabilities", f"{self.total_liabilities:.2f}"])
+            writer.writerow([])
+            writer.writerow(["EQUITY"])
+            for acc in self.balance_sheet_equity:
+                writer.writerow([f"{acc['code']} - {acc['name']}", f"{abs(acc['balance']):.2f}"])
+            writer.writerow(["Total Equity", f"{self.total_equity:.2f}"])
+            writer.writerow([])
+            writer.writerow(["Total Liabilities & Equity", f"{self.total_liabilities_equity:.2f}"])
+            filename = f"balance_sheet_{self.report_date}.csv"
+        
+        elif self.active_report_tab == "income_statement":
+            writer = csv.writer(output)
+            writer.writerow(["Income Statement", f"{self.report_start_date} to {self.report_end_date}"])
+            writer.writerow([])
+            writer.writerow(["REVENUE"])
+            for acc in self.income_statement_revenue:
+                writer.writerow([f"{acc['code']} - {acc['name']}", f"{abs(acc['balance']):.2f}"])
+            writer.writerow(["Total Revenue", f"{self.total_revenue:.2f}"])
+            writer.writerow([])
+            writer.writerow(["EXPENSES"])
+            for acc in self.income_statement_expenses:
+                writer.writerow([f"{acc['code']} - {acc['name']}", f"{acc['balance']:.2f}"])
+            writer.writerow(["Total Expenses", f"{self.total_expenses:.2f}"])
+            writer.writerow([])
+            writer.writerow(["Net Income", f"{self.net_income:.2f}"])
+            filename = f"income_statement_{self.report_start_date}_{self.report_end_date}.csv"
+        
+        else:  # general_ledger
+            writer = csv.writer(output)
+            writer.writerow(["Date", "Description", "Debit", "Credit", "Balance"])
+            for entry in self.general_ledger_entries:
+                writer.writerow([
+                    entry["date"],
+                    entry["description"],
+                    f"{entry['debit']:.2f}" if entry["debit"] > 0 else "",
+                    f"{entry['credit']:.2f}" if entry["credit"] > 0 else "",
+                    f"{entry['running_balance']:.2f}",
+                ])
+            filename = f"general_ledger_{self.general_ledger_account_id}_{datetime.date.today().isoformat()}.csv"
+        
+        csv_data = output.getvalue()
+        return rx.download(data=csv_data, filename=filename)
+    
+    # Dashboard computed properties
+    @rx.var
+    def recent_transactions(self) -> list[Transaction]:
+        """Returns the 10 most recent transactions."""
+        return sorted(self.transactions, key=lambda t: t["date"], reverse=True)[:10]
+    
+    @rx.var
+    def asset_count(self) -> int:
+        return len([acc for acc in self.accounts if acc["type"] == "Asset"])
+    
+    @rx.var
+    def liability_count(self) -> int:
+        return len([acc for acc in self.accounts if acc["type"] == "Liability"])
+    
+    @rx.var
+    def equity_count(self) -> int:
+        return len([acc for acc in self.accounts if acc["type"] == "Equity"])
+    
+    @rx.var
+    def revenue_count(self) -> int:
+        return len([acc for acc in self.accounts if acc["type"] == "Revenue"])
+    
+    @rx.var
+    def expense_count(self) -> int:
+        return len([acc for acc in self.accounts if acc["type"] == "Expense"])

@@ -75,6 +75,18 @@ def settings_modal() -> rx.Component:
                         ),
                         class_name="flex-grow",
                     ),
+                    rx.el.div(
+                        rx.el.button(
+                            "Normalize Data",
+                            on_click=AppState.normalize_data,
+                            class_name="px-3 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md shadow-sm hover:bg-emerald-700 mr-2",
+                        ),
+                        rx.el.button(
+                            "Recompute Balances",
+                            on_click=AppState.recompute_balances_from_transactions,
+                            class_name="px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md shadow-sm hover:bg-indigo-700",
+                        ),
+                    ),
                     rx.radix.primitives.dialog.root(
                         rx.radix.primitives.dialog.trigger(
                             rx.el.button(
